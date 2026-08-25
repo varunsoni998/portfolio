@@ -274,6 +274,36 @@ generated `package-lock.json` so every future install (including CI)
 resolves the exact same versions instead of re-resolving against
 whatever's newest that day.
 
+## Fixed: Vercel build failure (tsc: Permission denied)
+
+A second, unrelated failure after the fix above: `sh: tsc: Permission
+denied`, exit code 126. Root cause was a real gap in this project —
+there was no `.gitignore`, so if `npm install` was ever run locally
+before `git add .`, the entire `node_modules` folder (including
+`node_modules/.bin/tsc`) got swept into the commit. That's the single
+most common cause of exactly this error: binaries inside a committed
+`node_modules` lose their executable permission bit when they
+round-trip through git — especially from Windows — so when a Linux
+build machine (like Vercel's) checks it out, `tsc` isn't marked
+executable anymore.
+
+`.gitignore` is added now (`node_modules`, `dist`, `.env*`, editor/OS
+files). If `node_modules` was already pushed in an earlier commit,
+adding `.gitignore` alone doesn't remove it — it has to be explicitly
+untracked once:
+
+```bash
+git rm -r --cached node_modules
+git add .
+git commit -m "fix: stop tracking node_modules, add .gitignore"
+git push
+```
+
+(`git rm -r --cached` only removes it from git's tracking — the actual
+files stay on disk untouched, and every future `npm install` recreates
+them with correct permissions, since npm always sets the executable
+bit itself on a fresh install.)
+
 ## Deployment
 
 Static output from `npm run build` (the `dist/` folder) works on

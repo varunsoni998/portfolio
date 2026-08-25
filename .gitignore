@@ -1,0 +1,34 @@
+# Dependencies — always installed fresh by the host (npm install),
+# never committed. A committed node_modules is exactly what caused the
+# "tsc: Permission denied" Vercel build failure — see README.
+node_modules
+
+# Build output
+dist
+dist-ssr
+
+# Env files — never commit real secrets or API base URLs meant to
+# differ per environment. Set these in the host's dashboard instead
+# (see README > Environment variables).
+.env
+.env.local
+.env.*.local
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+*.local

@@ -1,30 +1,18 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import sitemap from "vite-plugin-sitemap";
 
-// Update this to your real production domain before deploying.
-const SITE_URL = "https://varundhanak.dev";
+// Update this to your real production domain before deploying. Also
+// used in index.html and src/components/Seo.tsx — keep all three in
+// sync (or fix this to be read from one shared place if you template
+// index.html at build time later).
+// SITE_URL is documented here for that reason, even though this file
+// doesn't consume it directly anymore — sitemap.xml is now a plain
+// static file at public/sitemap.xml instead of build-time generated
+// (see that file's comment for why).
+// const SITE_URL = "https://varundhanak.dev";
 
 export default defineConfig({
-  plugins: [
-    react(),
-    sitemap({
-      hostname: SITE_URL,
-      dynamicRoutes: [
-        "/",
-        "/projects/businessos",
-        "/projects/pan-fraud-detection",
-        "/projects/mechago",
-        "/lab",
-        "/lab/image",
-        "/lab/video",
-        "/lab/chat",
-        "/lab/pdf",
-        "/lab/business-card",
-        "/lab/content",
-      ],
-    }),
-  ],
+  plugins: [react()],
   resolve: {
     alias: { "@": "/src" },
   },

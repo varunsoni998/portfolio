@@ -244,6 +244,36 @@ change for an 11-route portfolio — if it matters later, prerender the
 known routes at build time (`vite-plugin-ssg` or similar) rather than
 switching to Next.js.
 
+## Fixed: Vercel build failure (vite / @vitejs/plugin-react conflict)
+
+The first deploy attempt failed with an `ERESOLVE` error — npm couldn't
+reconcile the `vite` version being installed with what
+`@vitejs/plugin-react` supports. Root cause: Vite shipped a new major
+version (8) after this project was originally built, and the
+`@vitejs/plugin-react` version pinned here (4.x) never added support
+for it — its compatibility tops out around Vite 6/7. Fixed by moving
+both to versions actually built for each other: `vite@^8.2.2` and
+`@vitejs/plugin-react@^6.1.0` (the official release that shipped
+alongside Vite 8).
+
+While fixing this, `vite-plugin-sitemap` was also removed entirely —
+it's a single-maintainer package and another potential future version
+conflict for something that doesn't need a build-time plugin in the
+first place: this site's routes are a small, fixed, known list.
+`public/sitemap.xml` is now a plain static file (same pattern as
+`public/robots.txt`, which already points at it) — add a line by hand
+if a new route ever needs to appear there, no plugin/build step
+involved.
+
+There's no `package-lock.json` committed, so `npm install` always
+resolves to whatever the *latest* version satisfying each `^range` is
+at install time — which is exactly how this drifted in the first
+place between when the file was written and when it was actually
+installed. Once you've got a working `npm install` locally, commit the
+generated `package-lock.json` so every future install (including CI)
+resolves the exact same versions instead of re-resolving against
+whatever's newest that day.
+
 ## Deployment
 
 Static output from `npm run build` (the `dist/` folder) works on

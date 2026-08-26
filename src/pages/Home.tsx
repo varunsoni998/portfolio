@@ -1,12 +1,16 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Seo from "@/components/Seo";
 import Reveal from "@/components/Reveal";
 import ProjectRow from "@/components/ProjectRow";
 import HeroOrbVideo from "@/components/HeroOrbVideo";
 import AIToolCard from "@/components/AIToolCard";
+import CorridorGate from "@/corridor/CorridorGate";
 import { projects, primaryProject } from "@/data/projects";
 import { aiLabTools } from "@/data/aiLabTools";
 import { site } from "@/data/site";
+
+const CORRIDOR_SEEN_KEY = "corridor-seen";
 
 const SKILLS: { category: string; items: string[] }[] = [
   { category: "AI / ML", items: ["Python", "PyTorch", "TensorFlow", "Computer Vision", "OCR", "LLMs", "RAG", "Generative AI"] },
@@ -35,8 +39,38 @@ const CURRENTLY_BUILDING_STAGES = [
 const HOME_LAB_PREVIEW = aiLabTools.filter((t) => t.featuredOnHome).slice(0, 6);
 
 export default function Home() {
+  const navigate = useNavigate();
+  const [showCorridor, setShowCorridor] = useState(() => {
+    try {
+      return sessionStorage.getItem(CORRIDOR_SEEN_KEY) !== "true";
+    } catch {
+      return true;
+    }
+  });
+
+  function handleCorridorExit(target: string | null) {
+    try {
+      sessionStorage.setItem(CORRIDOR_SEEN_KEY, "true");
+    } catch {
+      // sessionStorage unavailable (private browsing, etc.) — corridor
+      // just replays next visit, not worth failing the exit over.
+    }
+    setShowCorridor(false);
+
+    if (target === "/lab") {
+      navigate("/lab");
+    } else if (target) {
+      // Give the corridor a tick to unmount before jumping to the section.
+      requestAnimationFrame(() => {
+        document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }
+
   return (
     <>
+      {showCorridor && <CorridorGate onExit={handleCorridorExit} />}
+
       <Seo
         title="AI & Data Science Engineer"
         description="Portfolio of Varun Dhanak, an AI & Data Science student building AI-powered products, full-stack systems, generative AI workflows, and computer vision applications."

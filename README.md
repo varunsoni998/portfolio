@@ -231,6 +231,17 @@ placeholder otherwise — see `ProjectGallery.tsx`).
       background — the fade radius was tuned by simulating it in
       Python, not by eyeballing it rendered; if the seam shows, adjust
       the two percentages in `HeroOrbVideo.tsx`'s `maskImage`
+- [ ] **Test the corridor in an actual browser before anything else** —
+      this is the first WebGL/Three.js code in the project, and it could
+      not be compiled or rendered anywhere while writing it (no network
+      access to `npm install`). Check: does `npm run dev` even build; does
+      the corridor render without console errors; does scrolling/dragging
+      move the camera smoothly; do all four doors click through to the
+      right place; does Skip work; does it correctly skip itself on a
+      device with `prefers-reduced-motion` set or no WebGL support
+- [ ] Confirm the corridor doesn't tank mobile performance — geometry is
+      intentionally minimal (a handful of flat panels, no shaders), but
+      only a real device test confirms it actually holds 60fps
 
 ## SEO tradeoff: CSR vs. SSR/SSG
 
@@ -303,6 +314,71 @@ git push
 files stay on disk untouched, and every future `npm install` recreates
 them with correct permissions, since npm always sets the executable
 bit itself on a fresh install.)
+
+## The 3D corridor entry (`src/corridor/`)
+
+The homepage (`Home.tsx`) now opens with a full-viewport, walkable 3D
+corridor — built in React Three Fiber — instead of dropping straight into
+the page. Scroll or drag to walk forward through the hallway; click one of
+the four doors (Work / AI Lab / About / Contact) to exit into that part of
+the site, or hit Skip. It plays once per browser session
+(`sessionStorage`), then the real page — everything already built:
+Selected Work, the AI Lab, About, Skills, Contact — is what's underneath
+and what every other route/link on the site still points at directly.
+Nothing else was restructured to make room for this.
+
+**Scope decisions, made deliberately rather than by default:**
+
+- **Reused the real site as the "rooms."** Modeling four separate room
+  interiors in 3D — the honest way to make every door lead somewhere fully
+  3D — would have meant either building actual 3D assets (no pipeline for
+  that here) or a much larger, much less tested surface area. Instead,
+  each door is a clean exit out of the corridor and into the page content
+  that already exists and already works.
+- **Procedural textures, not scanned art.** `paperTexture.ts` generates a
+  paper-grain canvas texture at runtime (subtle noise + faint fiber
+  strokes) instead of using scanned hand-drawn assets — there's no way for
+  me to produce real pencil-on-paper art, and even if there were, this
+  isn't the place to imitate one specific designer's signature technique
+  pixel-for-pixel. Combined with `THREE.EdgesGeometry` outlines on every
+  panel and door frame, it's a "sketched, not rendered" read built from a
+  couple of legitimate, lightweight techniques.
+- **A stylized paper-tear intro, not cloth physics.** `PaperTearIntro.tsx`
+  is two jagged-edged `<div>`s (CSS `clip-path`) that GSAP-animates apart
+  — a real torn-paper-opening cloth simulation is an entirely different
+  scope of problem, and this gets the same visual beat cheaply and
+  reliably.
+- **Virtual scroll, not real scroll.** `useVirtualScroll.ts` captures
+  wheel/touch/keyboard input into its own 0–1 progress value while the
+  corridor is active (`document.body.style.overflow = "hidden"` locks the
+  real page underneath) — the camera dolly is driven by that, not by
+  window scroll position.
+- **Accessibility and no-WebGL fallback are not optional add-ons here.**
+  `CorridorGate.tsx` checks for WebGL support and `prefers-reduced-motion`
+  before rendering anything — either one skips straight to the real page,
+  no broken canvas, no forced motion on someone who opted out. There's
+  also a persistent Skip button for anyone who just wants the page.
+
+### The dependency-version lesson, applied up front this time
+
+The last two Vercel failures were both dependency-version mismatches
+found the hard way, in production. Before touching `package.json` this
+time, I looked up the actual current, compatible versions instead of
+guessing: **`@react-three/fiber@8` pairs with React 18; `@react-three/fiber@9`
+requires React 19.** This project is still on React 18
+(`react@^18.3.1`), so the added dependencies are deliberately pinned to
+the React-18-compatible generation:
+
+- `@react-three/fiber`: `^8.17.10` (not the newer 9.x line)
+- `@react-three/drei`: `^9.114.0` (the matching generation for fiber 8)
+- `three`, `@types/three`: `^0.170.0` — not React-coupled, lower risk
+- `gsap`: `^3.12.5` — standalone, no React-version coupling
+
+If React itself is ever upgraded to 19, `@react-three/fiber` and
+`@react-three/drei` need to move to their 9.x/10.x generations together,
+not independently — that pairing is the thing to check first, the same
+way the `vite`/`@vitejs/plugin-react` pairing was the actual root cause
+of the first build failure.
 
 ## Deployment
 

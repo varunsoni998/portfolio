@@ -26,6 +26,15 @@ export function doorPosition(progress: number, side: "left" | "right"): THREE.Ve
 /** Yaw angle (radians) a door on the given side should face to sit flush in the wall. */
 export function doorYaw(progress: number, side: "left" | "right"): number {
   const tangent = tangentAt(progress);
-  const baseYaw = Math.atan2(tangent.x, tangent.z);
-  return baseYaw + (side === "right" ? -Math.PI / 2 : Math.PI / 2);
+  const up = new THREE.Vector3(0, 1, 0);
+  const right = new THREE.Vector3().crossVectors(tangent, up).normalize();
+  // The sign needs to face back toward the corridor's centerline (where
+  // foot traffic actually is) — that's -right for a door on the right
+  // wall, +right for a door on the left wall. Deriving yaw straight from
+  // that target vector (rather than the tangent plus a guessed ±90°
+  // offset) is what the previous version got backwards: it worked out to
+  // the door facing away from the corridor, so the sign rendered as seen
+  // from behind — mirrored.
+  const facing = side === "right" ? right.clone().negate() : right.clone();
+  return Math.atan2(facing.x, facing.z);
 }

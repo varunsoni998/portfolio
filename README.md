@@ -359,6 +359,28 @@ Nothing else was restructured to make room for this.
   no broken canvas, no forced motion on someone who opted out. There's
   also a persistent Skip button for anyone who just wants the page.
 
+### Fixed after the first pass
+
+- **Door signs were mirrored.** `doorYaw()` in `corridorPath.ts` computed
+  each door's facing angle from the travel tangent plus a guessed ±90°
+  offset, which worked out 180° backwards — the sign faced away from the
+  corridor instead of toward foot traffic, so from inside the hallway you
+  were reading the back of it. Rewritten to derive the yaw directly from
+  the actual target-facing vector (back toward the centerline) instead of
+  offsetting a different vector and hoping the sign was right.
+- **Added a guide character** (`Character.tsx`) — an original paper-cutout
+  figure (capsule body, sphere head, the same dark sketch-outline
+  treatment as the corridor shell and doors) that walks a fixed distance
+  ahead of the camera with a light bob and sway. Not a copy of any
+  specific character design — built from primitives, same as everything
+  else in the scene.
+- **There was no way back into the corridor once a door was opened.**
+  `Home.tsx` now shows a small "Walk the Corridor" button (bottom-right,
+  only visible once the corridor has been dismissed) that resets
+  `showCorridor` to `true` — since `CorridorGate` unmounts and remounts
+  cleanly, it replays the intro and starts the walk from the beginning
+  each time, not from wherever it left off.
+
 ### The dependency-version lesson, applied up front this time
 
 The last two Vercel failures were both dependency-version mismatches

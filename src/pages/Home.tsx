@@ -341,6 +341,16 @@ export default function Home() {
           </Reveal>
         </div>
       </section>
+
+      {!showCorridor && (
+        <button
+          type="button"
+          onClick={() => setShowCorridor(true)}
+          className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full border border-border-2 bg-surface/90 px-4 py-2.5 font-mono text-[11px] uppercase tracking-[0.12em] text-text shadow-surface backdrop-blur hover:border-accent hover:text-accent"
+        >
+          Walk the Corridor
+        </button>
+      )}
     </>
   );
 }

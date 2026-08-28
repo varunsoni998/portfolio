@@ -2,6 +2,7 @@ import type { MutableRefObject } from "react";
 import { Canvas } from "@react-three/fiber";
 import CorridorShell from "./CorridorShell";
 import CorridorCamera from "./CorridorCamera";
+import Character from "./Character";
 import Door from "./Door";
 import { CORRIDOR_DOORS, type CorridorDoor } from "./corridorConfig";
 
@@ -26,6 +27,7 @@ export default function CorridorScene({ progressRef, reducedMotion, onSelectDoor
       <directionalLight position={[2, 6, 2]} intensity={0.5} />
 
       <CorridorShell />
+      <Character progressRef={progressRef} />
       {CORRIDOR_DOORS.map((door) => (
         <Door key={door.id} door={door} onSelect={onSelectDoor} />
       ))}

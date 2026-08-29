@@ -7,7 +7,7 @@ export interface CorridorDoor {
   progress: number;
   /** Which side of the corridor the door is set into. */
   side: "left" | "right";
-  /** Section id on the homepage this door leads to, or "/lab" for a real route. */
+  /** Real route this door leads to — always its own page, not a homepage anchor. */
   target: string;
 }
 
@@ -26,9 +26,19 @@ export const PATH_POINTS: THREE.Vector3[] = [
   new THREE.Vector3(0, 1.6, -CORRIDOR_LENGTH),
 ];
 
+// Each door leads to its own real route/page — not a scroll anchor on the
+// homepage. AI Lab already had its own route (/lab); Work, About, and
+// Contact got dedicated pages specifically so the corridor's doors would
+// have real rooms to lead into.
 export const CORRIDOR_DOORS: CorridorDoor[] = [
-  { id: "work", label: "WORK", progress: 0.22, side: "left", target: "work" },
+  { id: "work", label: "WORK", progress: 0.22, side: "left", target: "/work" },
   { id: "ai-lab", label: "AI LAB", progress: 0.45, side: "right", target: "/lab" },
-  { id: "about", label: "ABOUT", progress: 0.68, side: "left", target: "about" },
-  { id: "contact", label: "CONTACT", progress: 0.9, side: "right", target: "contact" },
+  { id: "about", label: "ABOUT", progress: 0.68, side: "left", target: "/about" },
+  { id: "contact", label: "CONTACT", progress: 0.9, side: "right", target: "/contact" },
 ];
+
+// The main entrance/exit — centered at the far end of the hallway, not set
+// into a side wall. Reaching or clicking it drops the visitor into the
+// homepage itself, same as scrolling all the way to the end.
+export const MAIN_DOOR_PROGRESS = 0.97;
+

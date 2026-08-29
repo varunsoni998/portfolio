@@ -381,6 +381,36 @@ Nothing else was restructured to make room for this.
   cleanly, it replays the intro and starts the walk from the beginning
   each time, not from wherever it left off.
 
+### Fixed after the second pass
+
+- **The site nav was visible through the corridor.** `Nav` is
+  `sticky`/`z-50`; the corridor was `fixed`/`z-40` — a real stacking bug,
+  not a visual nitpick, since it meant the corridor was never actually a
+  full takeover. Raised to `z-[100]` in `CorridorGate.tsx`.
+- **The character read as a blob, not a person.** Rebuilt in
+  `Character.tsx` with an actual head/torso/arms/legs (still all
+  primitives — sphere, capsule — still an original design, not a copy of
+  anyone's specific character), with a real walk-cycle limb swing instead
+  of just a bob.
+- **Doors led to homepage sections, not real pages.** This was the bigger
+  change: `Work.tsx`, `AboutPage.tsx`, and `ContactPage.tsx` are new
+  dedicated routes (`/work`, `/about`, `/contact`) — real rooms for the
+  corridor's doors to lead into, matching how the reference site has an
+  actual room behind each door rather than an anchor scroll. AI Lab
+  already had its own route (`/lab`) and needed no change. To avoid
+  hand-duplicating content, the shared bits moved out of `Home.tsx` into
+  reusable pieces both the homepage and the new pages import:
+  `src/data/homeContent.ts` (skills, what-I-build, currently-building
+  data) and `src/components/ContactForm.tsx`. The homepage itself is
+  unchanged — it still has its own Selected Work / About / Contact
+  sections for anyone landing there directly or using the top nav; the
+  new routes exist specifically as corridor-door destinations.
+- **Added the main door.** `MainDoor.tsx` — a bright, centered doorway at
+  the literal end of the hallway (not set into a side wall, unlike the
+  four content doors), matching the glowing archway visible at the end of
+  the corridor in the reference image. Reaching or clicking it exits into
+  the homepage, same as scrolling all the way to the end.
+
 ### The dependency-version lesson, applied up front this time
 
 The last two Vercel failures were both dependency-version mismatches

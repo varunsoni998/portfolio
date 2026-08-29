@@ -5,35 +5,14 @@ import Reveal from "@/components/Reveal";
 import ProjectRow from "@/components/ProjectRow";
 import HeroOrbVideo from "@/components/HeroOrbVideo";
 import AIToolCard from "@/components/AIToolCard";
+import ContactForm from "@/components/ContactForm";
 import CorridorGate from "@/corridor/CorridorGate";
 import { projects, primaryProject } from "@/data/projects";
 import { aiLabTools } from "@/data/aiLabTools";
 import { site } from "@/data/site";
+import { SKILLS, WHAT_I_BUILD, CURRENTLY_BUILDING_STAGES } from "@/data/homeContent";
 
 const CORRIDOR_SEEN_KEY = "corridor-seen";
-
-const SKILLS: { category: string; items: string[] }[] = [
-  { category: "AI / ML", items: ["Python", "PyTorch", "TensorFlow", "Computer Vision", "OCR", "LLMs", "RAG", "Generative AI"] },
-  { category: "Full Stack", items: ["React", "TypeScript", "Vite", "FastAPI", "REST APIs", "PostgreSQL"] },
-  { category: "GenAI / Infrastructure", items: ["Ollama", "OpenRouter", "ComfyUI", "n8n"] },
-  { category: "Mobile", items: ["Flutter"] },
-];
-
-const WHAT_I_BUILD = [
-  { title: "AI Systems", body: "LLM applications, RAG pipelines, AI assistants and model-powered workflows." },
-  { title: "Full-Stack Products", body: "Production-oriented web, mobile and backend systems." },
-  { title: "Generative AI", body: "Text, image and video generation workflows." },
-  { title: "Computer Vision", body: "OCR, image processing and machine-learning based detection." },
-  { title: "Automation", body: "Workflow automation, integrations and AI-powered business processes." },
-];
-
-const CURRENTLY_BUILDING_STAGES = [
-  { label: "CRM", done: true },
-  { label: "Self-Hosted Server", done: true },
-  { label: "Secure Remote Access", done: false },
-  { label: "RAG", done: false },
-  { label: "AI Automation", done: false },
-];
 
 // Homepage preview shows a subset — the full gallery lives at /lab.
 const HOME_LAB_PREVIEW = aiLabTools.filter((t) => t.featuredOnHome).slice(0, 6);
@@ -57,14 +36,11 @@ export default function Home() {
     }
     setShowCorridor(false);
 
-    if (target === "/lab") {
-      navigate("/lab");
-    } else if (target) {
-      // Give the corridor a tick to unmount before jumping to the section.
-      requestAnimationFrame(() => {
-        document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-    }
+    // Every door now leads to its own real route (/work, /lab, /about,
+    // /contact) rather than a homepage anchor — null means the visitor
+    // hit Skip, reached the far end, or used the main door, all of which
+    // just drop back into this page.
+    if (target) navigate(target);
   }
 
   return (
@@ -352,61 +328,5 @@ export default function Home() {
         </button>
       )}
     </>
-  );
-}
-
-function ContactForm() {
-  return (
-    <form
-      className="flex flex-col gap-4 rounded-2xl border border-border bg-surface-2 p-6"
-      // Intentionally not wired to a backend — this keeps the portfolio free
-      // of unnecessary server infrastructure. Email above is the primary
-      // contact path; connect this to a form service (Formspree, a
-      // serverless function, etc.) later if you want a form instead.
-      onSubmit={(e) => e.preventDefault()}
-    >
-      <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted-2">
-        Prefer email — but feel free to draft a message here.
-      </p>
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="name" className="micro-label">
-          Name
-        </label>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          required
-          className="rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-text outline-none focus:border-accent"
-        />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="email" className="micro-label">
-          Email
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          className="rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-text outline-none focus:border-accent"
-        />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="message" className="micro-label">
-          Message
-        </label>
-        <textarea
-          id="message"
-          name="message"
-          rows={4}
-          required
-          className="resize-none rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-text outline-none focus:border-accent"
-        />
-      </div>
-      <button type="submit" className="btn-primary mt-2 justify-center">
-        Send message
-      </button>
-    </form>
   );
 }

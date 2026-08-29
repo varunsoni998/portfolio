@@ -3,6 +3,9 @@ import { useEffect } from "react";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import Home from "@/pages/Home";
+import Work from "@/pages/Work";
+import AboutPage from "@/pages/AboutPage";
+import ContactPage from "@/pages/ContactPage";
 import ProjectDetail from "@/pages/ProjectDetail";
 import Lab from "@/pages/Lab";
 import ImageGenerator from "@/pages/lab/ImageGenerator";
@@ -73,6 +76,9 @@ export default function App() {
           <main className="flex-1">
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/work" element={<Work />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/contact" element={<ContactPage />} />
               <Route path="/projects/:slug" element={<ProjectDetail />} />
               <Route path="/lab" element={<Lab />} />
               <Route path="/lab/image" element={<ImageGenerator />} />

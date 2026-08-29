@@ -4,15 +4,17 @@ import CorridorShell from "./CorridorShell";
 import CorridorCamera from "./CorridorCamera";
 import Character from "./Character";
 import Door from "./Door";
-import { CORRIDOR_DOORS, type CorridorDoor } from "./corridorConfig";
+import MainDoor from "./MainDoor";
+import { CORRIDOR_DOORS, MAIN_DOOR_PROGRESS, type CorridorDoor } from "./corridorConfig";
 
 interface CorridorSceneProps {
   progressRef: MutableRefObject<number>;
   reducedMotion: boolean;
   onSelectDoor: (door: CorridorDoor) => void;
+  onSelectMainDoor: () => void;
 }
 
-export default function CorridorScene({ progressRef, reducedMotion, onSelectDoor }: CorridorSceneProps) {
+export default function CorridorScene({ progressRef, reducedMotion, onSelectDoor, onSelectMainDoor }: CorridorSceneProps) {
   return (
     <Canvas
       shadows={false}
@@ -31,6 +33,7 @@ export default function CorridorScene({ progressRef, reducedMotion, onSelectDoor
       {CORRIDOR_DOORS.map((door) => (
         <Door key={door.id} door={door} onSelect={onSelectDoor} />
       ))}
+      <MainDoor progress={MAIN_DOOR_PROGRESS} onSelect={onSelectMainDoor} />
       <CorridorCamera progressRef={progressRef} reducedMotion={reducedMotion} />
     </Canvas>
   );

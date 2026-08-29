@@ -20,11 +20,14 @@ interface CorridorGateProps {
 
 /**
  * The corridor is a full-viewport takeover that gates entry into the real
- * site (see Home.tsx) — not a rebuild of every page in 3D. Reusing the
- * fully-built Selected Work / AI Lab / About / Contact content as the
- * "rooms" behind each door was a deliberate scope decision: modeling four
- * separate room interiors would multiply the risk (and the asset problem)
- * for a portfolio that already has real content built and working.
+ * site (see Home.tsx) — not a rebuild of every page in 3D. Each door leads
+ * to its own real route/page (Work, AI Lab, About, Contact) rather than a
+ * scroll anchor on the homepage; the far end of the hallway has its own
+ * centered "main door" (see MainDoor.tsx) that drops back into the
+ * homepage itself. Modeling four separate 3D room interiors instead of
+ * reusing the site's existing pages would have multiplied both the risk
+ * and the asset problem for a portfolio that already has real content
+ * built and working.
  */
 export default function CorridorGate({ onExit }: CorridorGateProps) {
   const [introDone, setIntroDone] = useState(false);
@@ -60,14 +63,21 @@ export default function CorridorGate({ onExit }: CorridorGateProps) {
   if (!webglOk) return null;
 
   function handleSelectDoor(door: CorridorDoor) {
+    // Every door leads to its own real route now (/work, /lab, /about,
+    // /contact) — never a homepage anchor.
     onExit(door.target);
   }
 
   return (
-    <div className="fixed inset-0 z-40 bg-background">
+    <div className="fixed inset-0 z-[100] bg-background">
       {!introDone && <PaperTearIntro onComplete={() => setIntroDone(true)} />}
 
-      <CorridorScene progressRef={progressRef} reducedMotion={reducedMotion} onSelectDoor={handleSelectDoor} />
+      <CorridorScene
+        progressRef={progressRef}
+        reducedMotion={reducedMotion}
+        onSelectDoor={handleSelectDoor}
+        onSelectMainDoor={() => onExit(null)}
+      />
 
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-6 md:p-10">
         <p className="font-mono text-xs uppercase tracking-[0.14em] text-text/70">Varun Dhanak</p>

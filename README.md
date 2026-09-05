@@ -315,122 +315,151 @@ files stay on disk untouched, and every future `npm install` recreates
 them with correct permissions, since npm always sets the executable
 bit itself on a fresh install.)
 
-## The 3D corridor entry (`src/corridor/`)
+## The 3D world (`src/world/`)
 
-The homepage (`Home.tsx`) now opens with a full-viewport, walkable 3D
-corridor — built in React Three Fiber — instead of dropping straight into
-the page. Scroll or drag to walk forward through the hallway; click one of
-the four doors (Work / AI Lab / About / Contact) to exit into that part of
-the site, or hit Skip. It plays once per browser session
-(`sessionStorage`), then the real page — everything already built:
-Selected Work, the AI Lab, About, Skills, Contact — is what's underneath
-and what every other route/link on the site still points at directly.
-Nothing else was restructured to make room for this.
+This replaced the earlier single-corridor version with the actual thing
+that was asked for: an explorable world with a real entrance (outside,
+before any corridor exists), a corridor with six real physical doors, and
+six real rooms behind them — About, Projects, AI Lab, Skills, Experience,
+Contact — all connected in one continuous scene, not six separate pages
+swapped in behind a fade. The earlier corridor-only version is left in
+`src/corridor/`, unused, in case any of it is still useful; nothing was
+deleted.
 
-**Scope decisions, made deliberately rather than by default:**
+### The core requirement: doors are physical, transitions are not cheated
 
-- **Reused the real site as the "rooms."** Modeling four separate room
-  interiors in 3D — the honest way to make every door lead somewhere fully
-  3D — would have meant either building actual 3D assets (no pipeline for
-  that here) or a much larger, much less tested surface area. Instead,
-  each door is a clean exit out of the corridor and into the page content
-  that already exists and already works.
-- **Procedural textures, not scanned art.** `paperTexture.ts` generates a
-  paper-grain canvas texture at runtime (subtle noise + faint fiber
-  strokes) instead of using scanned hand-drawn assets — there's no way for
-  me to produce real pencil-on-paper art, and even if there were, this
-  isn't the place to imitate one specific designer's signature technique
-  pixel-for-pixel. Combined with `THREE.EdgesGeometry` outlines on every
-  panel and door frame, it's a "sketched, not rendered" read built from a
-  couple of legitimate, lightweight techniques.
-- **A stylized paper-tear intro, not cloth physics.** `PaperTearIntro.tsx`
-  is two jagged-edged `<div>`s (CSS `clip-path`) that GSAP-animates apart
-  — a real torn-paper-opening cloth simulation is an entirely different
-  scope of problem, and this gets the same visual beat cheaply and
-  reliably.
-- **Virtual scroll, not real scroll.** `useVirtualScroll.ts` captures
-  wheel/touch/keyboard input into its own 0–1 progress value while the
-  corridor is active (`document.body.style.overflow = "hidden"` locks the
-  real page underneath) — the camera dolly is driven by that, not by
-  window scroll position.
-- **Accessibility and no-WebGL fallback are not optional add-ons here.**
-  `CorridorGate.tsx` checks for WebGL support and `prefers-reduced-motion`
-  before rendering anything — either one skips straight to the real page,
-  no broken canvas, no forced motion on someone who opted out. There's
-  also a persistent Skip button for anyone who just wants the page.
+The brief was explicit and repeated multiple times: no fade-to-black, no
+instant scene swap, no React-state-change-disguised-as-navigation. The
+camera has to visibly travel through an opening doorway. That's the one
+piece of architecture everything else in `src/world/` is built around:
 
-### Fixed after the first pass
+- **`WorldExperience.tsx`** is the whole state machine. There are exactly
+  four phases (`entrance`, `transition`, `corridor`, `room`), and a single
+  plain object (`camObj`) is the only thing that ever moves the real
+  Three.js camera — one `useFrame` at the bottom of the file applies
+  whatever `camObj` currently holds, every frame, regardless of which
+  system last wrote to it. Two systems write to it: the corridor's
+  scroll-driven walk (only active during `"corridor"`), and GSAP timelines
+  during every scripted transition (entering the main door, entering a
+  room, leaving a room, reaching the exit door). This is what lets a
+  scroll-driven walk and a scripted cinematic camera move coexist without
+  fighting each other or needing two different camera objects.
+- **Every transition is a two-segment GSAP timeline**, not a single tween
+  from A to B: camera moves to the threshold first (while the door is
+  physically rotating open on its hinge, driven by a separate GSAP tween
+  on that door's own hinge group), *then* continues past it and settles.
+  That's what actually produces "the camera crossed the threshold" rather
+  than "the camera arrived at its destination."
+- **Doors are real hinged objects, not sprites.** `Door.tsx` and
+  `EntranceDoor.tsx` each expose their hinge group's ref outward (via a
+  `registerRef` callback) instead of animating themselves on click —
+  `WorldExperience.tsx` is what actually rotates the hinge, in lockstep
+  with the camera's approach, because the door opening and the camera
+  moving are one choreographed sequence, not two independent animations
+  that happen to overlap.
+- **The walls actually have holes in them.** `WorldShell.tsx` doesn't
+  build the corridor's side walls as one solid plane with a door mesh
+  resting in front of it — that would mean the room behind a door could
+  never actually become visible, open door or not. It builds each wall as
+  several straight segments between doors, with a real gap left at each
+  door's location (see `buildWallSegments()`), so the room is genuinely
+  visible through the opening once the door swings open.
 
-- **Door signs were mirrored.** `doorYaw()` in `corridorPath.ts` computed
-  each door's facing angle from the travel tangent plus a guessed ±90°
-  offset, which worked out 180° backwards — the sign faced away from the
-  corridor instead of toward foot traffic, so from inside the hallway you
-  were reading the back of it. Rewritten to derive the yaw directly from
-  the actual target-facing vector (back toward the centerline) instead of
-  offsetting a different vector and hoping the sign was right.
-- **Added a guide character** (`Character.tsx`) — an original paper-cutout
-  figure (capsule body, sphere head, the same dark sketch-outline
-  treatment as the corridor shell and doors) that walks a fixed distance
-  ahead of the camera with a light bob and sway. Not a copy of any
-  specific character design — built from primitives, same as everything
-  else in the scene.
-- **There was no way back into the corridor once a door was opened.**
-  `Home.tsx` now shows a small "Walk the Corridor" button (bottom-right,
-  only visible once the corridor has been dismissed) that resets
-  `showCorridor` to `true` — since `CorridorGate` unmounts and remounts
-  cleanly, it replays the intro and starts the walk from the beginning
-  each time, not from wherever it left off.
+### The sequence, concretely
 
-### Fixed after the second pass
+1. **Entrance** (`EntranceDoor.tsx`, `EntranceGround.tsx`) — the visitor
+   starts outside, looking at one large door with a name integrated into
+   the environment beside it (not a hero section). This exists
+   specifically because the brief called out, as a strict requirement,
+   that the visitor must not already be standing in the corridor on load.
+2. Click the door → its hinge rotates open, and after a short beat the
+   camera timeline starts: threshold → past the doorway → settles at the
+   start of the corridor, looking down its length.
+3. **Corridor** — scroll or drag to walk (same virtual-scroll approach as
+   the earlier version), six real doors along the walls, each labeled in
+   the environment itself (About / Projects / AI Lab / Skills /
+   Experience / Contact), plus the original guide character walking
+   ahead.
+4. Click a door → its hinge opens, the room behind it is mounted
+   immediately (so it's visible growing through the doorway as the camera
+   approaches, not popping in once arrived), camera travels through,
+   settles inside.
+5. **Inside a room** — real content, presented as physical objects (see
+   below), with a labeled exit sign near the doorway that reverses the
+   same traversal back into the corridor, at the exact spot the visitor
+   left it (the corridor's scroll progress is never touched while a room
+   is open, so resuming the walk continues from where it left off, not
+   from the start).
+6. Reaching the far end of the corridor has its own bright, centered
+   **exit door** (`ExitDoor.tsx`) leading back out to the flat site.
 
-- **The site nav was visible through the corridor.** `Nav` is
-  `sticky`/`z-50`; the corridor was `fixed`/`z-40` — a real stacking bug,
-  not a visual nitpick, since it meant the corridor was never actually a
-  full takeover. Raised to `z-[100]` in `CorridorGate.tsx`.
-- **The character read as a blob, not a person.** Rebuilt in
-  `Character.tsx` with an actual head/torso/arms/legs (still all
-  primitives — sphere, capsule — still an original design, not a copy of
-  anyone's specific character), with a real walk-cycle limb swing instead
-  of just a bob.
-- **Doors led to homepage sections, not real pages.** This was the bigger
-  change: `Work.tsx`, `AboutPage.tsx`, and `ContactPage.tsx` are new
-  dedicated routes (`/work`, `/about`, `/contact`) — real rooms for the
-  corridor's doors to lead into, matching how the reference site has an
-  actual room behind each door rather than an anchor scroll. AI Lab
-  already had its own route (`/lab`) and needed no change. To avoid
-  hand-duplicating content, the shared bits moved out of `Home.tsx` into
-  reusable pieces both the homepage and the new pages import:
-  `src/data/homeContent.ts` (skills, what-I-build, currently-building
-  data) and `src/components/ContactForm.tsx`. The homepage itself is
-  unchanged — it still has its own Selected Work / About / Contact
-  sections for anyone landing there directly or using the top nav; the
-  new routes exist specifically as corridor-door destinations.
-- **Added the main door.** `MainDoor.tsx` — a bright, centered doorway at
-  the literal end of the hallway (not set into a side wall, unlike the
-  four content doors), matching the glowing archway visible at the end of
-  the corridor in the reference image. Reaching or clicking it exits into
-  the homepage, same as scrolling all the way to the end.
+### Rooms are physical objects, not cards floating in 3D
 
-### The dependency-version lesson, applied up front this time
+Every room (`src/world/rooms/*.tsx`) is built from the same small set of
+primitives (`RoomProps.tsx`: a desk, a monitor, a stack of papers, a
+wall-mounted frame) rather than one giant HTML panel. Real content — the
+actual project data, actual AI Lab tools, actual skills, actual
+education, actual contact links — sits on the "screen" of a monitor or
+inside a wall frame via `RoomInfoPanel.tsx`, which places genuine HTML
+(via drei's `<Html transform occlude>`) at a point in 3D space rather
+than baking text into a canvas texture. That was a deliberate choice: the
+content stays real, selectable, and link-clickable (GitHub/demo links,
+email, "View Case Study") instead of being a flat picture of text — an
+accessible fallback rather than a decorative screenshot.
 
-The last two Vercel failures were both dependency-version mismatches
-found the hard way, in production. Before touching `package.json` this
-time, I looked up the actual current, compatible versions instead of
-guessing: **`@react-three/fiber@8` pairs with React 18; `@react-three/fiber@9`
-requires React 19.** This project is still on React 18
-(`react@^18.3.1`), so the added dependencies are deliberately pinned to
-the React-18-compatible generation:
+**Experience room note:** there's no separate employment history
+anywhere in this project's data — never was, and nothing was invented to
+fill that room. It shows the same real "what I build / currently
+building" content used elsewhere in the site, which is the actual
+existing content that's closest to what an "experience" section would
+otherwise hold.
 
-- `@react-three/fiber`: `^8.17.10` (not the newer 9.x line)
-- `@react-three/drei`: `^9.114.0` (the matching generation for fiber 8)
-- `three`, `@types/three`: `^0.170.0` — not React-coupled, lower risk
-- `gsap`: `^3.12.5` — standalone, no React-version coupling
+### Audio
 
-If React itself is ever upgraded to 19, `@react-three/fiber` and
-`@react-three/drei` need to move to their 9.x/10.x generations together,
-not independently — that pairing is the thing to check first, the same
-way the `vite`/`@vitejs/plugin-react` pairing was the actual root cause
-of the first build failure.
+There's no real composed music or licensed sound effects here — I have
+no way to legally source either. `src/world/audio.ts` is honest about
+that instead of faking it: a quiet ambient pad (a few detuned oscillators
+through a lowpass filter with a slow LFO sweep) and short door/handle
+sounds (filtered noise bursts) are both synthesized at runtime with the
+Web Audio API, not audio files. Nothing starts until the visitor's first
+click (the main door) — respecting autoplay restrictions is what makes
+that timing correct, not just convenient — and there's a Sound On/Off
+toggle in the top-right overlay.
+
+### What's genuinely deferred here
+
+This is a large, honest scope cut from a much larger brief, made because
+none of this can be compiled, rendered, or performance-profiled in the
+sandbox that built it — building the highest-risk, highest-detail version
+of everything blind would be a worse bet than a working core system:
+
+- **No LOD, instancing, or asset disposal system.** Geometry is
+  intentionally minimal per room (a handful of primitives) rather than
+  needing those optimizations, but there's no infrastructure for loading
+  rooms progressively at scale.
+- **No literal mobile-specific simplified mode.** `WorldGate.tsx` still
+  checks WebGL support and `prefers-reduced-motion` and falls back to the
+  flat site either way — that's the honest mobile story right now: a
+  fully accessible flat site, not a lighter-weight 3D mode. Building a
+  genuinely optimized mobile WebGL path without being able to test on an
+  actual device felt like the wrong place to gamble.
+- **Object-level micro-interactions inside rooms** (hover states on
+  individual desk items, idle animations on props) are mostly not built —
+  the doors themselves are the interactive focus; the furniture is static
+  dressing around the real content panels.
+
+### Before testing this one
+
+Same standing caveat as every 3D addition to this project, worth
+repeating because the stakes are highest here: none of `src/world/` has
+touched a real browser. The door-hinge math, the wall-gap geometry, the
+GSAP timeline sequencing, and the room-yaw rotation (there's a `+ Math.PI`
+correction in `WorldExperience.tsx` that's easy to get backwards — it's
+commented with the reasoning, worth checking first if a room's back wall
+ever ends up facing the wrong way) are all things that were verified by
+careful reading and cross-checking file-to-file, not by looking at the
+result. `npm run dev` is where this actually gets tested for the first
+time.
 
 ## Deployment
 

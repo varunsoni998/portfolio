@@ -1,25 +1,24 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Seo from "@/components/Seo";
 import Reveal from "@/components/Reveal";
 import ProjectRow from "@/components/ProjectRow";
 import HeroOrbVideo from "@/components/HeroOrbVideo";
 import AIToolCard from "@/components/AIToolCard";
 import ContactForm from "@/components/ContactForm";
-import CorridorGate from "@/corridor/CorridorGate";
+import WorldGate from "@/world/WorldGate";
 import { projects, primaryProject } from "@/data/projects";
 import { aiLabTools } from "@/data/aiLabTools";
 import { site } from "@/data/site";
 import { SKILLS, WHAT_I_BUILD, CURRENTLY_BUILDING_STAGES } from "@/data/homeContent";
 
-const CORRIDOR_SEEN_KEY = "corridor-seen";
+const CORRIDOR_SEEN_KEY = "world-seen";
 
 // Homepage preview shows a subset — the full gallery lives at /lab.
 const HOME_LAB_PREVIEW = aiLabTools.filter((t) => t.featuredOnHome).slice(0, 6);
 
 export default function Home() {
-  const navigate = useNavigate();
-  const [showCorridor, setShowCorridor] = useState(() => {
+  const [showWorld, setShowWorld] = useState(() => {
     try {
       return sessionStorage.getItem(CORRIDOR_SEEN_KEY) !== "true";
     } catch {
@@ -27,25 +26,19 @@ export default function Home() {
     }
   });
 
-  function handleCorridorExit(target: string | null) {
+  function handleWorldExit() {
     try {
       sessionStorage.setItem(CORRIDOR_SEEN_KEY, "true");
     } catch {
-      // sessionStorage unavailable (private browsing, etc.) — corridor
+      // sessionStorage unavailable (private browsing, etc.) — the world
       // just replays next visit, not worth failing the exit over.
     }
-    setShowCorridor(false);
-
-    // Every door now leads to its own real route (/work, /lab, /about,
-    // /contact) rather than a homepage anchor — null means the visitor
-    // hit Skip, reached the far end, or used the main door, all of which
-    // just drop back into this page.
-    if (target) navigate(target);
+    setShowWorld(false);
   }
 
   return (
     <>
-      {showCorridor && <CorridorGate onExit={handleCorridorExit} />}
+      {showWorld && <WorldGate onExit={handleWorldExit} />}
 
       <Seo
         title="AI & Data Science Engineer"
@@ -318,13 +311,13 @@ export default function Home() {
         </div>
       </section>
 
-      {!showCorridor && (
+      {!showWorld && (
         <button
           type="button"
-          onClick={() => setShowCorridor(true)}
+          onClick={() => setShowWorld(true)}
           className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full border border-border-2 bg-surface/90 px-4 py-2.5 font-mono text-[11px] uppercase tracking-[0.12em] text-text shadow-surface backdrop-blur hover:border-accent hover:text-accent"
         >
-          Walk the Corridor
+          Enter the World
         </button>
       )}
     </>

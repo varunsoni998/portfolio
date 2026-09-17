@@ -28,8 +28,8 @@ export default function Door({ room, onSelect, registerRef }: DoorProps) {
   const position = doorPosition(room.progress, room.side);
   const yaw = doorYaw(room.progress, room.side);
 
-  const groupRef = useRef<THREE.Group>(null);
-  const hingeRef = useRef<THREE.Group>(null);
+  const groupRef = useRef<THREE.Group | null>(null);
+  const hingeRef = useRef<THREE.Group | null>(null);
   const handleRef = useRef<THREE.Mesh>(null);
 
   const slabGeometry = useMemo(() => new THREE.BoxGeometry(1.5, 2.6, 0.08), []);

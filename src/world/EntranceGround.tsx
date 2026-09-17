@@ -3,16 +3,27 @@ import * as THREE from "three";
 import { makePaperTexture } from "./paperTexture";
 
 /**
- * The outside area is deliberately minimal — a ground plane and an
- * ambient sky tone, not a fully modeled exterior. The point of this scene
- * is the door and the name beside it, not the surrounding architecture.
+ * The ground outside the entrance.
+ *
+ * Fixed after seeing it rendered: the plane was only 30 units wide while
+ * the camera can see much further, so it visibly *ended* mid-view and
+ * produced that hard horizon seam where ground met background. It's now
+ * large enough to always reach past the fog's far distance, so the ground
+ * fades into atmosphere instead of stopping at an edge. A tiled texture
+ * repeat keeps the grain from smearing at that size.
  */
 export default function EntranceGround() {
-  const groundTexture = useMemo(() => makePaperTexture(512, "#cfc7ae"), []);
-  const geometry = useMemo(() => new THREE.PlaneGeometry(30, 30), []);
+  const groundTexture = useMemo(() => {
+    const tex = makePaperTexture(512, "#d5cdb6");
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(24, 24);
+    return tex;
+  }, []);
+  const geometry = useMemo(() => new THREE.PlaneGeometry(220, 220), []);
 
   return (
-    <mesh position={[0, 0, 6]} rotation={[-Math.PI / 2, 0, 0]} geometry={geometry}>
+    <mesh position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} geometry={geometry} receiveShadow>
       <meshStandardMaterial map={groundTexture} roughness={1} />
     </mesh>
   );

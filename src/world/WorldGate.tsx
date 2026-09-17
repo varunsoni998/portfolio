@@ -43,7 +43,11 @@ export default function WorldGate({ onExit }: WorldGateProps) {
         camera={{ fov: 62, near: 0.1, far: 100, position: [0, 1.6, 10] }}
       >
         <color attach="background" args={["#dcd6c6"]} />
-        <fog attach="fog" args={["#dcd6c6", 6, 30]} />
+        {/* Fog pushed back from (6, 30): starting at 6 units meant the
+            entrance door — which the camera sits ~4 units from — was
+            already fogging out on arrival, which is part of why the
+            opening shot read as washed-out grey. */}
+        <fog attach="fog" args={["#dcd6c6", 18, 70]} />
         <WorldExperience reducedMotion={reducedMotion} onExitToSite={onExit} />
       </Canvas>
 

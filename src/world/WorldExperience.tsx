@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { gsap } from "gsap";
 import EntranceGround from "./EntranceGround";
+import SkyDome from "./SkyDome";
 import EntranceDoor, { type EntranceDoorHandle } from "./EntranceDoor";
 import WorldShell from "./WorldShell";
 import Character from "./Character";
@@ -220,9 +221,16 @@ export default function WorldExperience({ reducedMotion, onExitToSite }: WorldEx
 
   return (
     <>
-      <ambientLight intensity={0.65} />
-      <directionalLight position={[2, 6, 2]} intensity={0.5} />
+      {/* Lighting: a soft fill plus a warm key from above-front and a cool
+          bounce from behind, so surfaces actually differentiate. The single
+          flat ambient + one directional in the first version is why
+          everything rendered as the same undifferentiated grey. */}
+      <ambientLight intensity={0.5} />
+      <hemisphereLight args={["#f2ecdc", "#9e937c", 0.7]} />
+      <directionalLight position={[4, 8, 8]} intensity={0.9} color="#fff4e0" />
+      <directionalLight position={[-6, 4, -6]} intensity={0.25} color="#cdd4e0" />
 
+      <SkyDome />
       <EntranceGround />
       <EntranceDoor onSelect={handleEnterMain} registerRef={(refs) => (entranceHandle.current = refs)} disabled={phase !== "entrance"} />
 

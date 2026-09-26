@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: varun-dhanak-portfolio
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      # SPA fallback — without this, refreshing on a route like
+      # /lab/image or /projects/businessos 404s, because Render would
+      # otherwise look for a literal /lab/image/index.html on disk.
+      - type: rewrite
+        source: /*
+        destination: /index.html

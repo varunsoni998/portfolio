@@ -1,0 +1,10 @@
+Replace this with your real resume:
+1. Export your resume as a PDF.
+2. Name it Varun-Dhanak-Resume.pdf.
+3. Drop it in this /public/resume folder (same level as this file).
+4. Delete this placeholder file.
+5. In src/data/site.ts, flip `hasResume` to true.
+
+The "Explore My Work" / "View Resume" buttons already point at
+/resume/Varun-Dhanak-Resume.pdf and will switch from a disabled
+"Resume Coming Soon" state to a real link automatically once hasResume is true.
